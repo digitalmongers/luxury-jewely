@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
@@ -15,8 +17,10 @@ import {
   Gift,
   Check,
 } from 'lucide-react';
-import { CartItem, ComplementaryItem, PRODUCT_DATA, formatINR } from '../data/product';
+import { CartItem, ComplementaryItem, formatINR } from '../data/product';
 import { WishlistItem } from '../hooks/useWishlist';
+import { NextImage } from './NextImage';
+import { useProductCatalog } from './ProductCatalogContext';
 
 interface BagDrawerProps {
   open: boolean;
@@ -68,6 +72,15 @@ export const BagDrawer: React.FC<BagDrawerProps> = ({
       setOrderConfirmed(null);
     }
   }, [open, initialStep]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, onClose]);
 
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
@@ -182,10 +195,12 @@ export const BagDrawer: React.FC<BagDrawerProps> = ({
                       key={fav.id}
                       className="flex gap-3.5 sm:gap-4 pb-5 border-b border-white/[0.08]"
                     >
-                      <img
+                      <NextImage
                         src={fav.image}
                         alt={fav.title}
-                        referrerPolicy="no-referrer"
+                        width={80}
+                        height={80}
+                        sizes="80px"
                         className="w-20 h-20 object-cover border border-white/[0.08] bg-[#141419] shrink-0"
                       />
                       <div className="flex-1 min-w-0 space-y-1">
@@ -467,10 +482,12 @@ export const BagDrawer: React.FC<BagDrawerProps> = ({
                     key={item.id}
                     className="flex gap-3.5 sm:gap-4 pb-5 border-b border-white/[0.08]"
                   >
-                    <img
+                    <NextImage
                       src={item.image}
                       alt={item.title}
-                      referrerPolicy="no-referrer"
+                      width={80}
+                      height={80}
+                      sizes="80px"
                       className="w-20 h-20 object-cover border border-white/[0.08] bg-[#141419] shrink-0"
                     />
                     <div className="flex-1 min-w-0 space-y-1">
@@ -580,6 +597,15 @@ export const TryOnModal: React.FC<TryOnModalProps> = ({ open, onClose }) => {
   const [slot, setSlot] = useState('16:00 IST');
   const [contact, setContact] = useState('');
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, onClose]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -733,7 +759,17 @@ export const PlatinumCollectionModal: React.FC<CollectionModalProps> = ({
   onClose,
   onAddComplementary,
 }) => {
+  const PRODUCT_DATA = useProductCatalog();
   const [filter, setFilter] = useState<'All' | ComplementaryItem['category']>('All');
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, onClose]);
 
   const categories: Array<'All' | ComplementaryItem['category']> = [
     'All',
@@ -809,12 +845,14 @@ export const PlatinumCollectionModal: React.FC<CollectionModalProps> = ({
                   key={item.id}
                   className="bg-[#131318] border border-white/[0.1] hover:border-white/[0.22] transition-colors flex flex-col lg:flex-row overflow-hidden"
                 >
-                  <div className="w-full lg:w-44 xl:w-48 aspect-[4/3] lg:aspect-auto bg-[#0A0A0D] shrink-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-white/[0.06]">
-                    <img
+                  <div className="relative w-full lg:w-44 xl:w-48 aspect-[4/3] lg:aspect-auto bg-[#0A0A0D] shrink-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-white/[0.06]">
+                    <NextImage
                       src={item.image}
                       alt={item.alt}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover"
+                      fill
+                      placeholder="blur"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 192px"
+                      className="object-cover"
                     />
                   </div>
 

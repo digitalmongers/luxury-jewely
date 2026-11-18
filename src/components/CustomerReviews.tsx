@@ -1,118 +1,36 @@
+'use client';
+
 import React, { useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Star, ShieldCheck, PenLine, X } from 'lucide-react';
 import { SplitReveal } from './SplitReveal';
+import { INITIAL_REVIEWS, type ClientReview } from '@/src/lib/catalog';
+import type { ValidDiameter, ValidFinish } from '@/src/lib/validation';
 
-type FinishFilter = 'All' | 'Mirror 950' | 'Brushed Satin' | 'Champagne Trim';
+type FinishFilter = 'All' | ValidFinish;
 
-interface ClientReview {
-  id: string;
-  author: string;
-  city: string;
-  finish: Exclude<FinishFilter, 'All'>;
-  diameter: '14 mm Classic' | '18 mm Statement';
-  rating: 5 | 4;
-  date: string;
-  headline: string;
-  quote: string;
-  verified: boolean;
+interface CustomerReviewsProps {
+  initialReviews?: ClientReview[];
 }
 
-const INITIAL_REVIEWS: ClientReview[] = [
-  {
-    id: 'rev-1',
-    author: 'Ananya Deshmukh',
-    city: 'Mumbai',
-    finish: 'Mirror 950',
-    diameter: '14 mm Classic',
-    rating: 5,
-    date: 'October 2026',
-    headline: 'Reassuring platinum density without pulling the lobe',
-    quote:
-      'I switched from rhodium-plated white gold hoops that tarnished after two monsoons. The Trinity Triumph balis have a cool, liquid-mercury brilliance and a click-top hinge that closes with a crisp audible snap. I have worn them through 12-hour studio days and never once caught them on silk scarves.',
-    verified: true,
-  },
-  {
-    id: 'rev-2',
-    author: 'Meera Krishnan',
-    city: 'Bengaluru',
-    finish: 'Brushed Satin',
-    diameter: '18 mm Statement',
-    rating: 5,
-    date: 'September 2026',
-    headline: 'Architectural restraint that pairs with everything',
-    quote:
-      'The hairline satin texture catches diffused light softly while the inner bevels stay mirror-bright. After booking the live video try-on, I chose the 18 mm size—it frames the jawline cleanly for evening dinners yet stays understated for boardroom mornings.',
-    verified: true,
-  },
-  {
-    id: 'rev-3',
-    author: 'Rhea Kapoor-Malhotra',
-    city: 'New Delhi',
-    finish: 'Champagne Trim',
-    diameter: '14 mm Classic',
-    rating: 5,
-    date: 'November 2026',
-    headline: 'Bridges my platinum and warm gold stacks effortlessly',
-    quote:
-      'Having the warm champagne center strand braided between pure Platinum 950 hoops means I can wear these alongside my heirloom gold bangles without clashing. Arrived sealed in the charcoal suede vault within 36 hours.',
-    verified: true,
-  },
-  {
-    id: 'rev-4',
-    author: 'Dr. Kavita Subramanian',
-    city: 'Chennai',
-    finish: 'Mirror 950',
-    diameter: '14 mm Classic',
-    rating: 5,
-    date: 'August 2026',
-    headline: 'Zero nickel irritation—genuinely hypoallergenic',
-    quote:
-      'As a surgeon with sensitive skin, most alloyed posts irritate within hours. Platinum 950 is completely inert and comfortable even overnight. The PGI laser hallmark inside the inner curve is razor clear.',
-    verified: true,
-  },
-  {
-    id: 'rev-5',
-    author: 'Zoya Merchant',
-    city: 'Pune',
-    finish: 'Mirror 950',
-    diameter: '18 mm Statement',
-    rating: 5,
-    date: 'October 2026',
-    headline: 'The three bezel diamonds add quiet fire up close',
-    quote:
-      'Not flashy from across the room—just three pinpricks of EF-VVS sparkle nestled inside the twisted strands whenever you turn your head. Paired mine with the Celeste double-arc ear cuff from the same edit.',
-    verified: true,
-  },
-  {
-    id: 'rev-6',
-    author: 'Nandini Rao',
-    city: 'Hyderabad',
-    finish: 'Brushed Satin',
-    diameter: '14 mm Classic',
-    rating: 4,
-    date: 'September 2026',
-    headline: 'Precision hinge engineering and heirloom presentation',
-    quote:
-      'The suede jeweler tray alone feels like an exhibition piece. The clasp felt slightly firm on day one, which the Virelle stylist explained is intentional for tension longevity—after a week it glides smoothly.',
-    verified: true,
-  },
-];
-
-export const CustomerReviews: React.FC = () => {
+export const CustomerReviews: React.FC<CustomerReviewsProps> = ({
+  initialReviews = INITIAL_REVIEWS,
+}) => {
   const prefersReduced = useReducedMotion();
-  const [reviews, setReviews] = useState<ClientReview[]>(INITIAL_REVIEWS);
+  const [reviews, setReviews] = useState<ClientReview[]>(initialReviews);
   const [filter, setFilter] = useState<FinishFilter>('All');
   const [composerOpen, setComposerOpen] = useState(false);
 
   // Review composer state
   const [author, setAuthor] = useState('');
   const [city, setCity] = useState('');
-  const [finish, setFinish] = useState<Exclude<FinishFilter, 'All'>>('Mirror 950');
-  const [diameter, setDiameter] = useState<'14 mm Classic' | '18 mm Statement'>('14 mm Classic');
+  const [finish, setFinish] = useState<ValidFinish>('Mirror 950');
+  const [diameter, setDiameter] = useState<ValidDiameter>('14 mm Classic');
   const [rating, setRating] = useState<5 | 4>(5);
   const [headline, setHeadline] = useState('');
   const [quote, setQuote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const filteredReviews = useMemo(() => {
     if (filter === 'All') return reviews;
@@ -127,28 +45,49 @@ export const CustomerReviews: React.FC = () => {
     return blended.toFixed(2);
   }, [reviews]);
 
-  const handleSubmitReview = (e: React.FormEvent) => {
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!author.trim() || !headline.trim() || !quote.trim()) return;
-    const newEntry: ClientReview = {
-      id: `rev-${Date.now()}`,
-      author: author.trim(),
-      city: city.trim() || 'India',
-      finish,
-      diameter,
-      rating,
-      date: 'November 2026',
-      headline: headline.trim(),
-      quote: quote.trim(),
-      verified: true,
-    };
-    setReviews((prev) => [newEntry, ...prev]);
-    setFilter('All');
-    setAuthor('');
-    setCity('');
-    setHeadline('');
-    setQuote('');
-    setComposerOpen(false);
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          author: author.trim(),
+          city: city.trim() || 'India',
+          finish,
+          diameter,
+          rating,
+          headline: headline.trim(),
+          quote: quote.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        const firstDetail = data?.error?.details
+          ? (Object.values(data.error.details)[0] as string)
+          : undefined;
+        setSubmitError(firstDetail || data?.error?.message || 'Unable to publish review.');
+        return;
+      }
+
+      const created: ClientReview = data.review;
+      setReviews((prev) => [created, ...prev]);
+      setFilter('All');
+      setAuthor('');
+      setCity('');
+      setHeadline('');
+      setQuote('');
+      setComposerOpen(false);
+    } catch {
+      setSubmitError('Network interruption — please try again in a moment.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -325,12 +264,19 @@ export const CustomerReviews: React.FC = () => {
               </div>
             </div>
 
+            {submitError && (
+              <p role="alert" className="text-[12px] text-[#E5989B]">
+                {submitError}
+              </p>
+            )}
+
             <div className="flex justify-end">
               <button
                 type="submit"
-                className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] bg-[#F4F4F6] hover:bg-[#D6C7AE] text-[#08080A] text-[13px] font-semibold transition-colors cursor-pointer"
+                disabled={submitting}
+                className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] bg-[#F4F4F6] hover:bg-[#D6C7AE] text-[#08080A] text-[13px] font-semibold transition-colors cursor-pointer disabled:opacity-60"
               >
-                Publish Review
+                {submitting ? 'Publishing…' : 'Publish Review'}
               </button>
             </div>
           </form>
@@ -364,10 +310,10 @@ export const CustomerReviews: React.FC = () => {
           {filteredReviews.map((review, index) => (
             <motion.article
               key={review.id}
-              initial={prefersReduced ? undefined : { opacity: 0, y: 16 }}
+              initial={prefersReduced ? undefined : { opacity: 0, y: 12 }}
               whileInView={prefersReduced ? undefined : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.25) }}
+              viewport={{ once: true, amount: 0.02 }}
+              transition={{ duration: 0.4, delay: Math.min(index * 0.04, 0.2) }}
               className="break-inside-avoid bg-[#101014] border border-white/[0.08] p-5 sm:p-6 md:p-7 space-y-4 sm:space-y-5"
             >
               {/* Rating + Date Line (Zero Pill Enclosures) */}

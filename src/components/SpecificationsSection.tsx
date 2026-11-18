@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { ArrowUpRight } from 'lucide-react';
 import { DiameterOption, FinishOption, PRODUCT_DATA } from '../data/product';
 
 interface SpecificationsSectionProps {
@@ -59,48 +62,64 @@ export const SpecificationsSection: React.FC<SpecificationsSectionProps> = ({
       </section>
 
       <footer className="bg-[#060608] py-10 sm:py-12">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-1">
-            <span className="font-display text-xl font-semibold tracking-[0.06em] text-[#F4F4F6]">
-              {PRODUCT_DATA.brand}
-            </span>
-            <p className="text-[12px] text-[#9A9AA6]">
-              Platinum Atelier · Handcrafted in Mumbai · PGI &amp; BIS Certified Fine Jewellery
-            </p>
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 space-y-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-1">
+              <span className="font-display text-xl font-semibold tracking-[0.06em] text-[#F4F4F6]">
+                {PRODUCT_DATA.brand}
+              </span>
+              <p className="text-[12px] text-[#9A9AA6]">
+                Platinum Atelier · Handcrafted in Mumbai · PGI &amp; BIS Certified Fine Jewellery
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[#A1A1AA]">
+              <button
+                type="button"
+                onClick={() => onNavigate('overview')}
+                className="py-2 min-h-[40px] hover:text-[#F4F4F6] transition-colors cursor-pointer"
+              >
+                Overview
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('atelier-3d')}
+                className="py-2 min-h-[40px] hover:text-[#F4F4F6] transition-colors cursor-pointer"
+              >
+                360° Atelier
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('craftsmanship')}
+                className="py-2 min-h-[40px] hover:text-[#F4F4F6] transition-colors cursor-pointer"
+              >
+                Craftsmanship
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('shop-the-look')}
+                className="py-2 min-h-[40px] hover:text-[#F4F4F6] transition-colors cursor-pointer"
+              >
+                Shop the Look
+              </button>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[#A1A1AA]">
-            <button
-              type="button"
-              onClick={() => onNavigate('overview')}
-              className="py-2 min-h-[40px] hover:text-[#F4F4F6] transition-colors cursor-pointer"
+          <div className="pt-6 border-t border-white/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-[12px] text-[#9A9AA6]">
+            <span>© 2026 {PRODUCT_DATA.brand} Fine Jewellery. All rights reserved.</span>
+            <a
+              href="https://wa.me/919897266808"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[#D6C7AE] hover:text-[#F4F4F6] transition-colors py-1"
             >
-              Overview
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('atelier-3d')}
-              className="py-2 min-h-[40px] hover:text-[#F4F4F6] transition-colors cursor-pointer"
-            >
-              360° Atelier
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('craftsmanship')}
-              className="py-2 min-h-[40px] hover:text-[#F4F4F6] transition-colors cursor-pointer"
-            >
-              Craftsmanship
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('shop-the-look')}
-              className="py-2 min-h-[40px] hover:text-[#F4F4F6] transition-colors cursor-pointer"
-            >
-              Shop the Look
-            </button>
+              <span>Developed by Digital Mongers Softech</span>
+              <ArrowUpRight className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+            </a>
           </div>
         </div>
       </footer>
     </>
   );
 };
+

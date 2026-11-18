@@ -1,124 +1,50 @@
-import React, { useMemo, useState } from 'react';
+'use client';
+
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { MapPin, ShieldCheck, Truck, X, LocateFixed, Calendar } from 'lucide-react';
+import { computeDeliveryEstimate, type DeliveryEstimate } from '@/src/lib/catalog';
 
-export interface DeliveryEstimate {
-  postalCode: string;
-  regionLabel: string;
-  courierMethod: string;
-  minDays: number;
-  maxDays: number;
-  arrivalWindow: string;
-  dispatchNote: string;
+export type { DeliveryEstimate };
+
+interface ShippingAndDeliveryProps {
+  initialEstimate?: DeliveryEstimate;
 }
 
-function addBusinessDays(startDate: Date, businessDays: number): Date {
-  const result = new Date(startDate);
-  let added = 0;
-  while (added < businessDays) {
-    result.setDate(result.getDate() + 1);
-    if (result.getDay() !== 0) {
-      added += 1;
-    }
-  }
-  return result;
-}
+const SSR_SAFE_FALLBACK: DeliveryEstimate = {
+  postalCode: '400001',
+  regionLabel: 'Mumbai Metro (400001)',
+  courierMethod: 'Dedicated White-Glove Hand Courier',
+  minDays: 1,
+  maxDays: 1,
+  arrivalWindow: '1–2 Business Days',
+  dispatchNote: 'Dispatches from Mumbai Atelier vault',
+};
 
-function formatShortDate(date: Date): string {
-  return date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
-function calculateDeliveryEstimate(rawCode: string): DeliveryEstimate {
-  const cleaned = rawCode.trim().toUpperCase();
-  const digits = cleaned.replace(/\D/g, '');
-  const now = new Date();
-  const dispatchCutOff = now.getHours() < 15;
-  const dispatchLead = dispatchCutOff ? 0 : 1;
-  const dispatchNote = dispatchCutOff
-    ? 'Dispatches today from Mumbai Atelier vault'
-    : 'Dispatches next business morning from Mumbai Atelier';
-
-  let regionLabel = 'Standard Domestic Courier';
-  let courierMethod = 'Sequel Insured Armored Vault';
-  let minTransit = 3;
-  let maxTransit = 4;
-
-  if (digits.length === 6) {
-    // 6-digit Indian PIN codes
-    if (digits.startsWith('400')) {
-      regionLabel = `Mumbai Metro (${digits})`;
-      courierMethod = 'Dedicated White-Glove Hand Courier';
-      minTransit = 1;
-      maxTransit = 1;
-    } else if (
-      ['110', '560', '500', '600', '700', '411', '380'].some((p) => digits.startsWith(p))
-    ) {
-      regionLabel = `Tier-1 Metro (${digits})`;
-      courierMethod = 'Sequel Insured Express Air Vault';
-      minTransit = 1;
-      maxTransit = 2;
-    } else {
-      regionLabel = `India Postal (${digits})`;
-      courierMethod = 'Sequel Insured Vault Transit';
-      minTransit = 3;
-      maxTransit = 4;
-    }
-  } else if (digits.length === 5) {
-    // 5-digit US / International ZIP codes
-    const firstDigit = digits[0];
-    const coastLabel =
-      firstDigit === '0' || firstDigit === '1' || firstDigit === '2'
-        ? 'US East Coast'
-        : firstDigit === '8' || firstDigit === '9'
-          ? 'US West Coast'
-          : 'United States';
-    regionLabel = `${coastLabel} (${digits})`;
-    courierMethod = 'Brink’s Global Priority Air Vault';
-    minTransit = 4;
-    maxTransit = 6;
-  } else if (cleaned.length >= 4) {
-    regionLabel = `International (${cleaned})`;
-    courierMethod = 'DHL Express Insured Jewellery Vault';
-    minTransit = 5;
-    maxTransit = 7;
-  }
-
-  const minDays = dispatchLead + minTransit;
-  const maxDays = dispatchLead + maxTransit;
-  const minDate = addBusinessDays(now, minDays);
-  const maxDate = addBusinessDays(now, maxDays);
-
-  const arrivalWindow =
-    minDays === maxDays
-      ? formatShortDate(minDate)
-      : `${formatShortDate(minDate)} – ${formatShortDate(maxDate)}`;
-
-  return {
-    postalCode: cleaned || '400001',
-    regionLabel,
-    courierMethod,
-    minDays,
-    maxDays,
-    arrivalWindow,
-    dispatchNote,
-  };
-}
-
-export const ShippingAndDelivery: React.FC = () => {
+export const ShippingAndDelivery: React.FC<ShippingAndDeliveryProps> = ({ initialEstimate }) => {
   const prefersReduced = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [savedCode, setSavedCode] = useState<string>('400001');
-  const [draftCode, setDraftCode] = useState<string>('400001');
+  const [savedCode, setSavedCode] = useState<string>(initialEstimate?.postalCode || '400001');
+  const [draftCode, setDraftCode] = useState<string>(initialEstimate?.postalCode || '400001');
+  const [serverEstimate, setServerEstimate] = useState<DeliveryEstimate | null>(
+    initialEstimate ?? null
+  );
   const [error, setError] = useState<string | null>(null);
+  const [calculating, setCalculating] = useState(false);
   const [locating, setLocating] = useState(false);
 
-  const estimate = useMemo(() => calculateDeliveryEstimate(savedCode), [savedCode]);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const handleApplyZip = (e: React.FormEvent) => {
+  const estimate = useMemo(() => {
+    if (serverEstimate) return serverEstimate;
+    if (!mounted) return SSR_SAFE_FALLBACK;
+    return computeDeliveryEstimate(savedCode);
+  }, [serverEstimate, mounted, savedCode]);
+
+  const handleApplyZip = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = draftCode.trim();
     const digitsOnly = trimmed.replace(/\D/g, '');
@@ -126,9 +52,30 @@ export const ShippingAndDelivery: React.FC = () => {
       setError('Enter a valid 5-digit ZIP code or 6-digit PIN code.');
       return;
     }
+
+    setCalculating(true);
     setError(null);
-    setSavedCode(trimmed);
-    setModalOpen(false);
+    try {
+      const res = await fetch('/api/shipping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postalCode: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.error?.message || 'Enter a valid 5-digit ZIP code or 6-digit PIN code.');
+        return;
+      }
+      setSavedCode(trimmed);
+      setServerEstimate(data.estimate);
+      setModalOpen(false);
+    } catch {
+      setSavedCode(trimmed);
+      setServerEstimate(computeDeliveryEstimate(trimmed));
+      setModalOpen(false);
+    } finally {
+      setCalculating(false);
+    }
   };
 
   const handleUseLocation = () => {
@@ -284,9 +231,10 @@ export const ShippingAndDelivery: React.FC = () => {
                     />
                     <button
                       type="submit"
-                      className="px-4 py-2.5 min-h-[44px] bg-[#F4F4F6] hover:bg-[#D6C7AE] text-[#08080A] text-[13px] font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                      disabled={calculating}
+                      className="px-4 py-2.5 min-h-[44px] bg-[#F4F4F6] hover:bg-[#D6C7AE] text-[#08080A] text-[13px] font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-60"
                     >
-                      Calculate
+                      {calculating ? 'Calculating…' : 'Calculate'}
                     </button>
                   </div>
 
@@ -322,7 +270,9 @@ export const ShippingAndDelivery: React.FC = () => {
 
                 {/* Live Preview of Estimated Arrival */}
                 {(() => {
-                  const preview = calculateDeliveryEstimate(draftCode || savedCode);
+                  const preview = mounted
+                    ? computeDeliveryEstimate(draftCode || savedCode)
+                    : estimate;
                   return (
                     <div className="p-4 bg-[#14141A] border border-white/[0.08] space-y-2.5">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[12px]">

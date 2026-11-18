@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useEffect, useState } from 'react';
 
 export interface WishlistItem {
@@ -31,9 +33,9 @@ function readFromStorage(storageKey: string): WishlistItem[] {
 
 export function useWishlist(userId: string = DEFAULT_USER_ID) {
   const storageKey = buildStorageKey(userId);
-  const [favorites, setFavorites] = useState<WishlistItem[]>(() => readFromStorage(storageKey));
+  const [favorites, setFavorites] = useState<WishlistItem[]>([]);
 
-  // Sync if userId changes or across browser tabs
+  // Populate after mount and sync across browser tabs
   useEffect(() => {
     setFavorites(readFromStorage(storageKey));
 

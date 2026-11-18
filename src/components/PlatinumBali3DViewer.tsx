@@ -1,3 +1,5 @@
+'use client';
+
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
@@ -9,7 +11,9 @@ import {
 } from '@react-three/drei';
 import * as THREE from 'three';
 import { ChevronDown, ChevronUp, RotateCw, Layers, Camera } from 'lucide-react';
-import { FinishId, FinishOption, PRODUCT_DATA } from '../data/product';
+import { FinishId, FinishOption } from '../data/product';
+import { NextImage } from './NextImage';
+import { useProductCatalog } from './ProductCatalogContext';
 
 function detectSoftwareWebGL(): boolean {
   try {
@@ -272,17 +276,19 @@ const SingleBaliEarring: React.FC<SingleEarringProps> = ({
 };
 
 interface TurntableStageProps {
+  gallery: Array<{ id: string; src: string }>;
   activeAngleIdx: number;
   onAngleChange: (idx: number) => void;
   autoRotate: boolean;
 }
 
 const PhotographicTurntableStage: React.FC<TurntableStageProps> = ({
+  gallery,
   activeAngleIdx,
   onAngleChange,
   autoRotate,
 }) => {
-  const textures = useTexture(PRODUCT_DATA.gallery.map((g) => g.src));
+  const textures = useTexture(gallery.map((g) => g.src));
   const carouselRef = useRef<THREE.Group>(null);
   const { gl } = useThree();
 
@@ -323,7 +329,7 @@ const PhotographicTurntableStage: React.FC<TurntableStageProps> = ({
           const isCurrent = idx === activeAngleIdx;
           return (
             <group
-              key={PRODUCT_DATA.gallery[idx].id}
+              key={gallery[idx]?.id || idx}
               position={[x, 0, z]}
               rotation={[0, angle, 0]}
               onClick={(e) => {
@@ -451,6 +457,7 @@ export const PlatinumBali3DViewer: React.FC<PlatinumBali3DViewerProps> = ({
   selectedFinish,
   onSelectFinish,
 }) => {
+  const PRODUCT_DATA = useProductCatalog();
   const isSoftwareGl = useMemo(() => detectSoftwareWebGL(), []);
   const [mode, setMode] = useState<ViewerMode>('3d-sculpture');
   const [explode, setExplode] = useState(0);
@@ -524,10 +531,12 @@ export const PlatinumBali3DViewer: React.FC<PlatinumBali3DViewerProps> = ({
 
           {contextLost ? (
             <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-[#0C0C10]">
-              <img
+              <NextImage
                 src={PRODUCT_DATA.gallery[0].src}
                 alt={PRODUCT_DATA.gallery[0].alt}
-                referrerPolicy="no-referrer"
+                width={256}
+                height={192}
+                sizes="256px"
                 className="w-64 h-48 object-cover mb-4 border border-white/10"
               />
               <p className="text-sm text-[#D6C7AE]">
@@ -634,6 +643,7 @@ export const PlatinumBali3DViewer: React.FC<PlatinumBali3DViewerProps> = ({
                   </group>
                 ) : (
                   <PhotographicTurntableStage
+                    gallery={PRODUCT_DATA.gallery}
                     activeAngleIdx={activeAngleIdx}
                     onAngleChange={(idx) => {
                       setAutoRotate(false);

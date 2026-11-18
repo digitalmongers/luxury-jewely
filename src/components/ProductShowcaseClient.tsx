@@ -1,4 +1,7 @@
+'use client';
+
 import React, { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -10,29 +13,69 @@ import {
   FinishOption,
   PRODUCT_DATA,
   formatINR,
-} from './data/product';
-import { Navbar } from './components/Navbar';
-import { HeroPurchaseSection } from './components/HeroPurchaseSection';
-import { PlatinumBali3DViewer } from './components/PlatinumBali3DViewer';
-import { CraftsmanshipBento } from './components/CraftsmanshipBento';
-import { ShopTheLookSection } from './components/ShopTheLookSection';
-import { CustomerReviews } from './components/CustomerReviews';
-import { SpecificationsSection } from './components/SpecificationsSection';
+} from '@/src/data/product';
+import type { ClientReview, DeliveryEstimate } from '@/src/lib/catalog';
+import { Navbar } from './Navbar';
+import { HeroPurchaseSection } from './HeroPurchaseSection';
+import { CraftsmanshipBento } from './CraftsmanshipBento';
+import { ShopTheLookSection } from './ShopTheLookSection';
+import { CustomerReviews } from './CustomerReviews';
+import { SpecificationsSection } from './SpecificationsSection';
 import {
   BagDrawer,
   PlatinumCollectionModal,
   TryOnModal,
-} from './components/BagAndTryOnModals';
-import { CustomCursor } from './components/CustomCursor';
-import { WishlistItem, useWishlist } from './hooks/useWishlist';
+} from './BagAndTryOnModals';
+import { CustomCursor } from './CustomCursor';
+import { ErrorBoundary } from './ErrorBoundary';
+import {
+  ProductCatalogProvider,
+  type ProductCatalogData,
+} from './ProductCatalogContext';
+import { WishlistItem, useWishlist } from '@/src/hooks/useWishlist';
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function App() {
+const PlatinumBali3DViewer = dynamic(
+  () => import('./PlatinumBali3DViewer').then((mod) => mod.PlatinumBali3DViewer),
+  {
+    ssr: false,
+    loading: () => (
+      <section
+        id="atelier-3d"
+        className="py-16 md:py-24 border-b border-white/[0.08] bg-[#08080A]"
+      >
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10">
+          <div className="h-[460px] md:h-[580px] bg-[#0E0E13] border border-white/[0.08] flex flex-col items-center justify-center gap-3 animate-pulse">
+            <span className="text-[11px] uppercase tracking-[0.14em] text-[#D6C7AE]">
+              Initialising WebGL Platinum Atelier
+            </span>
+            <span className="font-display text-2xl text-[#F4F4F6]">
+              Preparing 360° Sculpture…
+            </span>
+          </div>
+        </div>
+      </section>
+    ),
+  }
+);
+
+interface ProductShowcaseClientProps {
+  initialProduct?: ProductCatalogData;
+  initialReviews?: ClientReview[];
+  initialDeliveryEstimate?: DeliveryEstimate;
+}
+
+export const ProductShowcaseClient: React.FC<ProductShowcaseClientProps> = ({
+  initialProduct,
+  initialReviews,
+  initialDeliveryEstimate,
+}) => {
+  const catalog = initialProduct ?? PRODUCT_DATA;
   const lenisRef = useRef<Lenis | null>(null);
-  const [selectedFinish, setSelectedFinish] = useState<FinishOption>(PRODUCT_DATA.finishes[0]);
+  const [selectedFinish, setSelectedFinish] = useState<FinishOption>(catalog.finishes[0]);
   const [selectedDiameter, setSelectedDiameter] = useState<DiameterOption>(
-    PRODUCT_DATA.diameters[0]
+    catalog.diameters[0]
   );
   const [bagItems, setBagItems] = useState<CartItem[]>([]);
   const [bagOpen, setBagOpen] = useState(false);
@@ -53,7 +96,6 @@ export default function App() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Initialize Lenis smooth scrolling synced with GSAP ScrollTrigger
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReduced) return;
@@ -91,11 +133,11 @@ export default function App() {
   };
 
   const currentPrice =
-    PRODUCT_DATA.basePrice + selectedFinish.priceDelta + selectedDiameter.priceDelta;
+    catalog.basePrice + selectedFinish.priceDelta + selectedDiameter.priceDelta;
   const isCurrentInStock = selectedFinish.inStock && selectedDiameter.inStock;
 
   const ensurePrimaryItemInBag = () => {
-    const itemId = `${PRODUCT_DATA.sku}-${selectedFinish.id}-${selectedDiameter.id}`;
+    const itemId = `${catalog.sku}-${selectedFinish.id}-${selectedDiameter.id}`;
     setBagItems((prev) => {
       const existing = prev.find((i) => i.id === itemId);
       if (existing) {
@@ -105,12 +147,12 @@ export default function App() {
         ...prev,
         {
           id: itemId,
-          sku: PRODUCT_DATA.sku,
-          title: PRODUCT_DATA.title,
+          sku: catalog.sku,
+          title: catalog.title,
           subtitle: `${selectedFinish.shortLabel} · ${selectedDiameter.label}`,
           unitPrice: currentPrice,
           quantity: 1,
-          image: PRODUCT_DATA.gallery[0].src,
+          image: catalog.gallery[0].src,
         },
       ];
     });
@@ -123,7 +165,7 @@ export default function App() {
   };
 
   const handleBuyNowPrimary = () => {
-    const itemId = `${PRODUCT_DATA.sku}-${selectedFinish.id}-${selectedDiameter.id}`;
+    const itemId = `${catalog.sku}-${selectedFinish.id}-${selectedDiameter.id}`;
     setBagItems((prev) => {
       const existing = prev.find((i) => i.id === itemId);
       if (existing) return prev;
@@ -131,12 +173,12 @@ export default function App() {
         ...prev,
         {
           id: itemId,
-          sku: PRODUCT_DATA.sku,
-          title: PRODUCT_DATA.title,
+          sku: catalog.sku,
+          title: catalog.title,
           subtitle: `${selectedFinish.shortLabel} · ${selectedDiameter.label}`,
           unitPrice: currentPrice,
           quantity: 1,
-          image: PRODUCT_DATA.gallery[0].src,
+          image: catalog.gallery[0].src,
         },
       ];
     });
@@ -179,17 +221,17 @@ export default function App() {
     setBagItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const currentFavoriteId = `${PRODUCT_DATA.sku}-${selectedFinish.id}-${selectedDiameter.id}`;
+  const currentFavoriteId = `${catalog.sku}-${selectedFinish.id}-${selectedDiameter.id}`;
   const isCurrentWishlisted = isSaved(currentFavoriteId);
 
   const handleToggleCurrentWishlist = () => {
     toggleFavorite({
       id: currentFavoriteId,
-      sku: PRODUCT_DATA.sku,
-      title: PRODUCT_DATA.title,
+      sku: catalog.sku,
+      title: catalog.title,
       subtitle: `${selectedFinish.shortLabel} · ${selectedDiameter.label}`,
       unitPrice: currentPrice,
-      image: PRODUCT_DATA.gallery[0].src,
+      image: catalog.gallery[0].src,
     });
   };
 
@@ -217,7 +259,8 @@ export default function App() {
   const totalBagCount = bagItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <MotionConfig reducedMotion="user">
+    <ProductCatalogProvider product={catalog}>
+      <MotionConfig reducedMotion="user">
       <div className="relative min-h-screen bg-[#08080A] text-[#F4F4F6]">
         {/* Subtle atmospheric film grain */}
         <div className="fixed inset-0 z-50 grain-overlay pointer-events-none" aria-hidden="true" />
@@ -234,23 +277,31 @@ export default function App() {
         />
 
         <main className="pb-16 lg:pb-0">
-          <HeroPurchaseSection
-            selectedFinish={selectedFinish}
-            onSelectFinish={setSelectedFinish}
-            selectedDiameter={selectedDiameter}
-            onSelectDiameter={setSelectedDiameter}
-            isWishlisted={isCurrentWishlisted}
-            onToggleWishlist={handleToggleCurrentWishlist}
-            onAddToBag={handleAddPrimaryToBag}
-            onBuyNow={handleBuyNowPrimary}
-            onOpenTryOn={() => setTryOnOpen(true)}
-            onScrollTo3D={() => handleNavigate('atelier-3d')}
-          />
+          <ErrorBoundary title="Product Hero Unavailable">
+            <HeroPurchaseSection
+              selectedFinish={selectedFinish}
+              onSelectFinish={setSelectedFinish}
+              selectedDiameter={selectedDiameter}
+              onSelectDiameter={setSelectedDiameter}
+              isWishlisted={isCurrentWishlisted}
+              onToggleWishlist={handleToggleCurrentWishlist}
+              onAddToBag={handleAddPrimaryToBag}
+              onBuyNow={handleBuyNowPrimary}
+              onOpenTryOn={() => setTryOnOpen(true)}
+              onScrollTo3D={() => handleNavigate('atelier-3d')}
+              initialDeliveryEstimate={initialDeliveryEstimate}
+            />
+          </ErrorBoundary>
 
-          <PlatinumBali3DViewer
-            selectedFinish={selectedFinish}
-            onSelectFinish={setSelectedFinish}
-          />
+          <ErrorBoundary
+            title="3D Atelier Preview Unavailable"
+            description="Your browser encountered a WebGL interruption while rendering the Platinum 950 3D hoop."
+          >
+            <PlatinumBali3DViewer
+              selectedFinish={selectedFinish}
+              onSelectFinish={setSelectedFinish}
+            />
+          </ErrorBoundary>
 
           <CraftsmanshipBento />
 
@@ -259,7 +310,9 @@ export default function App() {
             onOpenCollection={() => setCollectionOpen(true)}
           />
 
-          <CustomerReviews />
+          <ErrorBoundary title="Collector Reviews Temporarily Unavailable">
+            <CustomerReviews initialReviews={initialReviews} />
+          </ErrorBoundary>
 
           <SpecificationsSection
             selectedFinish={selectedFinish}
@@ -268,7 +321,7 @@ export default function App() {
           />
         </main>
 
-        {/* Compact Mobile Sticky Buy Bar (appears only after scrolling past hero CTA) */}
+        {/* Compact Mobile Sticky Buy Bar */}
         {showMobileBar && (
           <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-[#0D0D11]/95 border-t border-white/[0.1] px-3.5 py-2 flex items-center justify-between gap-2.5">
             <div className="min-w-0 flex-1">
@@ -329,6 +382,7 @@ export default function App() {
           onAddComplementary={handleAddComplementaryToBag}
         />
       </div>
-    </MotionConfig>
+      </MotionConfig>
+    </ProductCatalogProvider>
   );
-}
+};

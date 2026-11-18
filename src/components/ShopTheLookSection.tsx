@@ -1,7 +1,11 @@
+'use client';
+
 import React, { useState } from 'react';
 import { ArrowRight, Plus, Check } from 'lucide-react';
-import { ComplementaryItem, PRODUCT_DATA, formatINR } from '../data/product';
+import { ComplementaryItem, formatINR } from '../data/product';
 import { SplitReveal } from './SplitReveal';
+import { NextImage } from './NextImage';
+import { useProductCatalog } from './ProductCatalogContext';
 
 interface ShopTheLookSectionProps {
   onAddComplementary: (item: ComplementaryItem) => void;
@@ -12,6 +16,7 @@ export const ShopTheLookSection: React.FC<ShopTheLookSectionProps> = ({
   onAddComplementary,
   onOpenCollection,
 }) => {
+  const PRODUCT_DATA = useProductCatalog();
   const [addedIds, setAddedIds] = useState<Record<string, boolean>>({});
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
@@ -71,12 +76,14 @@ export const ShopTheLookSection: React.FC<ShopTheLookSectionProps> = ({
                       <span className="text-xs text-[#A1A1AA] mt-1">{item.metal}</span>
                     </div>
                   ) : (
-                    <img
+                    <NextImage
                       src={item.image}
                       alt={item.alt}
-                      referrerPolicy="no-referrer"
+                      fill
+                      placeholder="blur"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                       onError={() => setImgErrors((p) => ({ ...p, [item.id]: true }))}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                     />
                   )}
                 </div>

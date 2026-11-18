@@ -1,23 +1,28 @@
+'use client';
+
 import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import {
   Check,
   Heart,
   Video,
-  ZoomIn,
   ArrowUpRight,
+  Ruler,
 } from 'lucide-react';
 import {
   DiameterOption,
   FinishOption,
-  PRODUCT_DATA,
   formatINR,
 } from '../data/product';
+import { useProductCatalog } from './ProductCatalogContext';
 import { AuroraShaderCanvas } from './AuroraShaderCanvas';
 import { MagneticButton } from './MagneticButton';
 import { SplitReveal } from './SplitReveal';
 import { ShippingAndDelivery } from './ShippingAndDelivery';
 import { NotifyWhenAvailableForm } from './NotifyWhenAvailableForm';
+import { ProductImageGallery } from './ProductImageGallery';
+import { SizeGuideModal } from './SizeGuideModal';
+import type { DeliveryEstimate } from '@/src/lib/catalog';
 
 interface HeroPurchaseSectionProps {
   selectedFinish: FinishOption;
@@ -30,6 +35,7 @@ interface HeroPurchaseSectionProps {
   onBuyNow: () => void;
   onOpenTryOn: () => void;
   onScrollTo3D: () => void;
+  initialDeliveryEstimate?: DeliveryEstimate;
 }
 
 export const HeroPurchaseSection: React.FC<HeroPurchaseSectionProps> = ({
@@ -43,27 +49,17 @@ export const HeroPurchaseSection: React.FC<HeroPurchaseSectionProps> = ({
   onBuyNow,
   onOpenTryOn,
   onScrollTo3D,
+  initialDeliveryEstimate,
 }) => {
+  const PRODUCT_DATA = useProductCatalog();
   const prefersReduced = useReducedMotion();
-  const [activeImageIdx, setActiveImageIdx] = useState(0);
-  const [zoomActive, setZoomActive] = useState(false);
-  const [zoomOrigin, setZoomOrigin] = useState({ x: 50, y: 50 });
   const [justAdded, setJustAdded] = useState(false);
-  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
-  const activeImage = PRODUCT_DATA.gallery[activeImageIdx];
   const computedPrice =
     PRODUCT_DATA.basePrice + selectedFinish.priceDelta + selectedDiameter.priceDelta;
   const isInStock = selectedFinish.inStock && selectedDiameter.inStock;
   const restockNote = selectedFinish.restockNote || selectedDiameter.restockNote;
-
-  const handleGalleryMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!zoomActive) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setZoomOrigin({ x, y });
-  };
 
   const handlePrimaryAdd = () => {
     onAddToBag();
@@ -93,109 +89,13 @@ export const HeroPurchaseSection: React.FC<HeroPurchaseSectionProps> = ({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-start">
-          {/* Left 7 columns: Interactive Studio Gallery */}
-          <div className="lg:col-span-7 space-y-4">
-            <div
-              data-cursor={zoomActive ? 'Magnify' : 'Inspect'}
-              onClick={() => setZoomActive((prev) => !prev)}
-              onMouseMove={handleGalleryMouseMove}
-              onMouseLeave={() => setZoomActive(false)}
-              className="relative w-full aspect-[4/3] bg-[#101014] border border-white/[0.08] overflow-hidden cursor-zoom-in group"
-            >
-              {imgErrors[activeImage.id] ? (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#15151B] to-[#0B0B0E] p-8 text-center">
-                  <span className="font-display text-3xl text-[#F4F4F6] mb-2">
-                    {PRODUCT_DATA.title}
-                  </span>
-                  <span className="text-xs text-[#A1A1AA]">{activeImage.caption}</span>
-                </div>
-              ) : (
-                <img
-                  src={activeImage.src}
-                  alt={activeImage.alt}
-                  referrerPolicy="no-referrer"
-                  onError={() =>
-                    setImgErrors((prev) => ({ ...prev, [activeImage.id]: true }))
-                  }
-                  style={
-                    zoomActive && !prefersReduced
-                      ? {
-                          transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
-                          transform: 'scale(1.65)',
-                        }
-                      : undefined
-                  }
-                  className="w-full h-full object-cover transition-transform duration-300 ease-out"
-                />
-              )}
-
-              {/* Subtle bottom gradient scrim + gallery caption */}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3.5 py-3 sm:px-5 sm:py-4 flex items-end justify-between gap-3 pointer-events-none">
-                <p className="text-[12px] sm:text-[13px] text-[#E4E4E7] max-w-md line-clamp-2 sm:line-clamp-none">
-                  {activeImage.caption}
-                </p>
-                <span className="inline-flex items-center gap-1 text-[11px] sm:text-[12px] text-[#D6C7AE] shrink-0 whitespace-nowrap">
-                  <ZoomIn className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">
-                    {zoomActive ? 'Click to reset' : 'Click to inspect'}
-                  </span>
-                  <span className="sm:hidden">{zoomActive ? 'Reset' : 'Zoom'}</span>
-                </span>
-              </div>
-            </div>
-
-            {/* Thumbnail Rail + 360° Jump */}
-            <div className="grid grid-cols-5 gap-1.5 sm:gap-3">
-              {PRODUCT_DATA.gallery.map((img, idx) => {
-                const isActive = idx === activeImageIdx;
-                return (
-                  <button
-                    key={img.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveImageIdx(idx);
-                      setZoomActive(false);
-                    }}
-                    aria-label={`View gallery angle ${idx + 1}: ${img.caption}`}
-                    className={`relative aspect-[4/3] min-h-[44px] overflow-hidden border transition-all duration-200 cursor-pointer bg-[#101014] ${
-                      isActive
-                        ? 'border-[#D6C7AE] opacity-100'
-                        : 'border-white/[0.08] opacity-60 hover:opacity-95'
-                    }`}
-                  >
-                    {imgErrors[img.id] ? (
-                      <div className="w-full h-full flex items-center justify-center text-[11px] text-[#A1A1AA]">
-                        Angle {idx + 1}
-                      </div>
-                    ) : (
-                      <img
-                        src={img.src}
-                        alt={img.alt}
-                        referrerPolicy="no-referrer"
-                        onError={() => setImgErrors((prev) => ({ ...prev, [img.id]: true }))}
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                  </button>
-                );
-              })}
-
-              <button
-                type="button"
-                onClick={onScrollTo3D}
-                data-cursor="360° View"
-                className="aspect-[4/3] min-h-[44px] border border-white/[0.12] bg-[#121217] hover:border-[#D6C7AE] transition-colors flex flex-col items-center justify-center gap-0.5 px-1 text-center cursor-pointer group"
-              >
-                <span className="font-mono-tabular text-[11px] sm:text-xs font-medium text-[#D6C7AE]">
-                  360°
-                </span>
-                <span className="text-[10px] sm:text-[11px] text-[#E4E4E7] group-hover:text-white flex items-center gap-0.5 whitespace-nowrap">
-                  <span className="hidden sm:inline">Atelier</span>
-                  <span className="sm:hidden">3D</span>
-                  <ArrowUpRight className="w-3 h-3" />
-                </span>
-              </button>
-            </div>
+          {/* Left 7 columns: Responsive Cloudinary Image Gallery */}
+          <div className="lg:col-span-7">
+            <ProductImageGallery
+              images={PRODUCT_DATA.gallery}
+              productTitle={PRODUCT_DATA.title}
+              onScrollTo3D={onScrollTo3D}
+            />
           </div>
 
           {/* Right 5 columns: Sticky Contiguous Purchase Module aligned with Left Gallery top */}
@@ -286,8 +186,18 @@ export const HeroPurchaseSection: React.FC<HeroPurchaseSectionProps> = ({
 
             {/* Hoop Diameter Selector */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="font-medium text-[#E4E4E7]">Bali Silhouette Diameter</span>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[13px]">
+                <div className="flex items-center gap-3">
+                  <span className="font-medium text-[#E4E4E7]">Bali Silhouette Diameter</span>
+                  <button
+                    type="button"
+                    onClick={() => setSizeGuideOpen(true)}
+                    className="inline-flex items-center gap-1.5 text-[12px] text-[#D6C7AE] hover:text-[#F4F4F6] underline decoration-[#D6C7AE]/45 underline-offset-4 transition-colors cursor-pointer"
+                  >
+                    <Ruler className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Size Guide</span>
+                  </button>
+                </div>
                 <span className="font-mono-tabular text-[12px] text-[#A1A1AA]">
                   Approx. {selectedDiameter.approxWeight}
                 </span>
@@ -367,10 +277,17 @@ export const HeroPurchaseSection: React.FC<HeroPurchaseSectionProps> = ({
             </div>
 
             {/* Shipping & Delivery Estimator */}
-            <ShippingAndDelivery />
+            <ShippingAndDelivery initialEstimate={initialDeliveryEstimate} />
           </div>
         </div>
       </div>
+
+      <SizeGuideModal
+        open={sizeGuideOpen}
+        onClose={() => setSizeGuideOpen(false)}
+        selectedDiameter={selectedDiameter}
+        onSelectDiameter={onSelectDiameter}
+      />
 
       {/* Subtle motion indicator */}
       {!prefersReduced && (

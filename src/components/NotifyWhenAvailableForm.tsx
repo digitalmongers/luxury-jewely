@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import { Bell, CheckCircle2, Mail } from 'lucide-react';
 
@@ -30,11 +32,13 @@ export const NotifyWhenAvailableForm: React.FC<NotifyWhenAvailableFormProps> = (
   variantLabel,
   restockNote,
 }) => {
-  const [alertsByVariant, setAlertsByVariant] = useState<Record<string, string>>(() =>
-    loadAlerts()
-  );
+  const [alertsByVariant, setAlertsByVariant] = useState<Record<string, string>>({});
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAlertsByVariant(loadAlerts());
+  }, []);
 
   const subscribedEmail = alertsByVariant[variantKey] || null;
 

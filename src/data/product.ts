@@ -67,28 +67,28 @@ export const PRODUCT_DATA = {
   gallery: [
     {
       id: 'hero',
-      src: '/src/assets/images/hero_platinum_bali_1794984555175.jpg',
+      src: 'https://res.cloudinary.com/gps27k9y/image/upload/v1794990624/hero_platinum_bali_1794984555175.jpg',
       alt: 'Trinity Triumph Platinum Bali Earrings resting on dark obsidian stone',
       caption: 'Sculpted three-strand helical weave with micro-bezel diamond accents',
       aspectClass: 'aspect-[4/3]',
     },
     {
       id: 'editorial',
-      src: '/src/assets/images/editorial_ear_profile_1794984553515.jpg',
+      src: 'https://res.cloudinary.com/gps27k9y/image/upload/v1794990625/editorial_ear_profile_1794984553515.jpg',
       alt: 'Editorial ear profile showing Trinity Triumph Platinum Bali Earrings worn',
       caption: 'Balanced profile engineered for weightless all-day ear drape',
       aspectClass: 'aspect-[3/4]',
     },
     {
       id: 'clasp',
-      src: '/src/assets/images/macro_clasp_craft_1794984551256.jpg',
+      src: 'https://res.cloudinary.com/gps27k9y/image/upload/v1794990624/1f643e72-8bb2-4464-84de-a6d1b7e795d2.jpg',
       alt: 'Macro view of the hinged click-top snap lock clasp on Platinum 950 bali hoop',
       caption: 'Flush-seated hinged barrel clasp tested for 10,000+ smooth closures',
       aspectClass: 'aspect-[4/3]',
     },
     {
       id: 'tray',
-      src: '/src/assets/images/lifestyle_velvet_tray_1794984553077.jpg',
+      src: 'https://res.cloudinary.com/gps27k9y/image/upload/v1794990624/lifestyle_velvet_tray_1794984553077.jpg',
       alt: 'Trinity Triumph Platinum Bali Earrings presented on charcoal suede jeweler tray',
       caption: 'Delivered in an heirloom charcoal suede travel vault with PGI certificate',
       aspectClass: 'aspect-[4/3]',
@@ -169,7 +169,8 @@ export const PRODUCT_DATA = {
       name: 'Sovereign Platinum Link Collar Necklace',
       metal: 'Platinum 950 · 0.45 ct Diamonds',
       price: 248500,
-      image: '/src/assets/images/look_platinum_necklace_1794984636114.jpg',
+      image:
+        'https://res.cloudinary.com/gps27k9y/image/upload/v1794990624/a61b18f0-336c-4051-8618-628c51c629b5.jpg',
       alt: 'Sovereign Platinum Link Collar Necklace on dark obsidian',
     },
     {
@@ -179,7 +180,8 @@ export const PRODUCT_DATA = {
       name: 'Trinity Twisted Platinum Cuff Bracelet',
       metal: 'Platinum 950 · Hand-Forged',
       price: 134900,
-      image: '/src/assets/images/look_platinum_bracelet_1794984634443.jpg',
+      image:
+        'https://res.cloudinary.com/gps27k9y/image/upload/v1794990625/3cbb8982-ccb8-48cc-ac5f-7c121304cc84.jpg',
       alt: 'Trinity Twisted Platinum Cuff Bracelet on dark slate stone',
     },
     {
@@ -189,7 +191,8 @@ export const PRODUCT_DATA = {
       name: 'Solstice Interlocking Platinum Band Ring',
       metal: 'Platinum 950 · Pavé Diamond Bar',
       price: 72600,
-      image: '/src/assets/images/look_platinum_ring_1794984635987.jpg',
+      image:
+        'https://res.cloudinary.com/gps27k9y/image/upload/v1794990624/83c23e95-80f3-46e0-8768-beae177c13f2.jpg',
       alt: 'Solstice Interlocking Platinum Band Ring on basalt stone',
     },
     {
@@ -199,7 +202,8 @@ export const PRODUCT_DATA = {
       name: 'Celeste Double-Arc Platinum Ear Cuff',
       metal: 'Platinum 950 · Mirror Polish',
       price: 38400,
-      image: '/src/assets/images/look_platinum_earcuff_1794984634612.jpg',
+      image:
+        'https://res.cloudinary.com/gps27k9y/image/upload/v1794990624/a618b973-fa89-47df-a2dc-5975c5ffefc3.jpg',
       alt: 'Celeste Double-Arc Platinum Ear Cuff on obsidian slab',
     },
   ] as ComplementaryItem[],

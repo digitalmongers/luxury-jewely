@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { ShoppingBag } from 'lucide-react';
 import { PRODUCT_DATA } from '../data/product';
