@@ -1,0 +1,8 @@
+{
+  "name": "Kumari — Trinity Triumph Platinum Bali Earrings",
+  "description": "Luxury fine jewellery product showcase for Kumari's Trinity Triumph Platinum 950 Bali Earrings (EBAL0094) featuring an interactive 3D atelier, bento craftsmanship story, and concierge checkout.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
